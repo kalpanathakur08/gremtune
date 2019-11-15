@@ -34,6 +34,8 @@ type idleConnection struct {
 // by dialing a new one if the pool does not currently have a maximum number
 // of active connections.
 func (p *Pool) Get() (*PooledConnection, error) {
+	t1 := time.Now()
+
 	// Lock the pool to keep the kids out.
 	p.mu.Lock()
 
@@ -50,6 +52,9 @@ func (p *Pool) Get() (*PooledConnection, error) {
 			p.active++
 			p.mu.Unlock()
 			pc := &PooledConnection{Pool: p, Client: conn.pc.Client}
+			t2 := time.Now()
+			diff := t2.Sub(t1)
+			fmt.Printf("Get1 connection time %s \n", diff)
 			return pc, nil
 
 		}
@@ -72,6 +77,9 @@ func (p *Pool) Get() (*PooledConnection, error) {
 			}
 
 			pc := &PooledConnection{Pool: p, Client: dc}
+			t2 := time.Now()
+			diff := t2.Sub(t1)
+			fmt.Printf("Get2 connection time %s \n", diff)
 			return pc, nil
 		}
 
@@ -82,6 +90,7 @@ func (p *Pool) Get() (*PooledConnection, error) {
 
 		p.cond.Wait()
 	}
+
 }
 
 // put pushes the supplied PooledConnection to the top of the idle slice to be reused.
