@@ -11,7 +11,7 @@ type Pool struct {
 	Dial        func() (*Client, error)
 	MaxActive   int
 	IdleTimeout time.Duration
-	mu          sync.Mutex
+	mu          sync.RWMutex
 	idle        []*idleConnection
 	active      int
 	cond        *sync.Cond
