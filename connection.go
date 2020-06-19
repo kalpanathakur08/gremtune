@@ -14,7 +14,7 @@ type dialer interface {
 	IsConnected() bool
 	IsDisposed() bool
 	write([]byte) error
-	read() ([]byte, error)
+	read() (Response, error)
 	close() error
 	getAuth() *auth
 	ping(errs chan error)
@@ -89,8 +89,10 @@ func (ws *Ws) write(msg []byte) (err error) {
 	return
 }
 
-func (ws *Ws) read() (msg []byte, err error) {
-	err = ws.conn.ReadJSON(msg)
+func (ws *Ws) read() (msg Response, err error) {
+	response := &Response{}
+	err = ws.conn.ReadJSON(response)
+	msg = *response
 	return
 }
 
@@ -162,9 +164,7 @@ func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker
 			c.Errored = true
 			break
 		}
-		if msg != nil {
-			c.handleResponse(msg)
-		}
+		c.handleResponseNoMarshal(msg)
 
 		select {
 		case <-quit:

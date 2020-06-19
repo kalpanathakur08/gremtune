@@ -62,6 +62,16 @@ func (c *Client) handleResponse(msg []byte) (err error) {
 	return
 }
 
+func (c *Client) handleResponseNoMarshal(resp Response) (err error) {
+
+	if resp.Status.Code == statusAuthenticate { //Server request authentication
+		return c.authenticate(resp.RequestID)
+	}
+
+	c.saveResponse(resp, err)
+	return
+}
+
 // marshalResponse creates a response struct for every incoming response for further manipulation
 func marshalResponse(msg []byte) (resp Response, err error) {
 	err = json.Unmarshal(msg, &resp)
