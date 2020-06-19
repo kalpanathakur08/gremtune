@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/pkg/errors"
 )
 
 type dialer interface {
@@ -15,7 +14,7 @@ type dialer interface {
 	IsConnected() bool
 	IsDisposed() bool
 	write([]byte) error
-	read() (int, []byte, error)
+	read() ([]byte, error)
 	close() error
 	getAuth() *auth
 	ping(errs chan error)
@@ -88,8 +87,8 @@ func (ws *Ws) write(msg []byte) (err error) {
 	return
 }
 
-func (ws *Ws) read() (msgType int, msg []byte, err error) {
-	msgType, msg, err = ws.conn.ReadMessage()
+func (ws *Ws) read() (msg []byte, err error) {
+	err = ws.conn.ReadJSON(msg)
 	return
 }
 
@@ -154,12 +153,10 @@ func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWork
 
 func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker works on a loop and sorts messages as soon as it receives them
 	for {
-		msgType, msg, err := c.conn.read()
-		if msgType == -1 { // msgType == -1 is noFrame (close connection)
-			return
-		}
+		msg, err := c.conn.read()
+
 		if err != nil {
-			errs <- errors.Wrapf(err, "Receive message type: %d", msgType)
+			errs <- err
 			c.Errored = true
 			break
 		}
